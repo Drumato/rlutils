@@ -37,7 +37,7 @@ func (l *GetParameterLimiter) Name() string {
 }
 
 func (l *GetParameterLimiter) Rule(r *http.Request) (*rl.Rule, error) {
-	if !l.isTargetRequest(r) {
+	if !l.IsTargetRequest(r) {
 		return &rl.Rule{ReqLimit: -1}, nil
 	}
 	for k, v := range l.getParameters {

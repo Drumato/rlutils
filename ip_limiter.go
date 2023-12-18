@@ -35,7 +35,7 @@ func (l *IPLimiter) Name() string {
 }
 
 func (l *IPLimiter) Rule(r *http.Request) (*rl.Rule, error) {
-	if !l.isTargetRequest(r) {
+	if !l.IsTargetRequest(r) {
 		return &rl.Rule{ReqLimit: -1}, nil
 	}
 	remoteAddr := strings.Split(r.RemoteAddr, ":")[0]

@@ -53,7 +53,7 @@ func (l *RequestPathLimiter) Name() string {
 }
 
 func (l *RequestPathLimiter) Rule(r *http.Request) (*rl.Rule, error) {
-	if !l.isTargetRequest(r) {
+	if !l.IsTargetRequest(r) {
 		return &rl.Rule{ReqLimit: -1}, nil
 	}
 	for _, st := range []struct {

@@ -34,7 +34,7 @@ func (l *HostLimiter) Name() string {
 }
 
 func (l *HostLimiter) Rule(r *http.Request) (*rl.Rule, error) {
-	if !l.isTargetRequest(r) {
+	if !l.IsTargetRequest(r) {
 		return &rl.Rule{ReqLimit: -1}, nil
 	}
 	return &rl.Rule{

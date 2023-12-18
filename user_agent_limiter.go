@@ -38,7 +38,7 @@ func (l *UserAgentLimiter) Name() string {
 }
 
 func (l *UserAgentLimiter) Rule(r *http.Request) (*rl.Rule, error) {
-	if !l.isTargetRequest(r) {
+	if !l.IsTargetRequest(r) {
 		return &rl.Rule{ReqLimit: -1}, nil
 	}
 	for _, ua := range l.userAgents {

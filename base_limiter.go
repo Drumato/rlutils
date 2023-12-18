@@ -42,7 +42,7 @@ func (l *BaseLimiter) Name() string {
 	return "base_limiter"
 }
 
-func (l *BaseLimiter) isTargetRequest(r *http.Request) bool {
+func (l *BaseLimiter) IsTargetRequest(r *http.Request) bool {
 	return l.isTargetExtensions(r)
 }
 

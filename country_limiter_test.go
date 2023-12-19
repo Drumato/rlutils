@@ -18,19 +18,16 @@ func testHTTPRequest(remoteAddr string) *http.Request {
 func TestCountryLimiter(t *testing.T) {
 	abspath, _ := filepath.Abs("./testdata/GeoIP2-Country-Test.mmdb")
 	reqLimit := 10
-	cl, err := NewCountryLimiter(abspath, []string{"US"}, reqLimit, 1*time.Hour, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// Define your test cases
 	testCases := []struct {
-		name            string
-		request         *http.Request
-		countries       []string
-		expectedCountry string
-		expectedError   bool
-		allowed         bool
+		name                       string
+		request                    *http.Request
+		countries                  []string
+		limitRateForOtherCountries bool
+		expectedCountry            string
+		expectedError              bool
+		allowed                    bool
 	}{
 		{
 			name:            "Valid IP from United States With Port",
@@ -47,7 +44,6 @@ func TestCountryLimiter(t *testing.T) {
 			allowed:         true,
 			expectedError:   false,
 		},
-
 		{
 			name:            "Invalid IP format",
 			request:         testHTTPRequest("invalid-ip"),
@@ -55,12 +51,42 @@ func TestCountryLimiter(t *testing.T) {
 			allowed:         false,
 			expectedError:   true,
 		},
+		{
+			name:                       "Valid IP from United States With Port and limitRateForOtherCountries,empty country",
+			request:                    testHTTPRequest("1.1.1.1"),
+			expectedCountry:            "",
+			countries:                  []string{"US"},
+			limitRateForOtherCountries: true,
+			allowed:                    false,
+			expectedError:              false,
+		},
+
+		{
+			name:                       "Valid IP from United States With Port and limitRateForOtherCountries,Franch",
+			request:                    testHTTPRequest("67.43.156.0"),
+			expectedCountry:            "BT",
+			countries:                  []string{"US"},
+			limitRateForOtherCountries: true,
+			allowed:                    true,
+			expectedError:              false,
+		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Run the country function to get the ISO country code
-
+			cl, err := NewCountryLimiter(
+				abspath,
+				[]string{"US"},
+				reqLimit,
+				1*time.Hour,
+				nil,
+				tc.limitRateForOtherCountries,
+				nil,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
 			remoteAddr := strings.Split(tc.request.RemoteAddr, ":")[0]
 			country, err := cl.country(remoteAddr)
 			if tc.expectedError {

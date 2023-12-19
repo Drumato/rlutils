@@ -13,8 +13,9 @@ import (
 )
 
 type CountryLimiter struct {
-	db        *maxminddb.Reader
-	countries []string
+	db                         *maxminddb.Reader
+	limitRateForOtherCountries bool
+	countries                  []string
 	BaseLimiter
 }
 
@@ -26,6 +27,7 @@ func NewCountryLimiter(
 	reqLimit int,
 	windowLen time.Duration,
 	targetExtensions []string,
+	limitRateForOtherCountries bool, // 他の国々にレートリミットを適用する
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
 ) (*CountryLimiter, error) {
 	db, err := maxminddb.Open(dbPath)
@@ -33,8 +35,9 @@ func NewCountryLimiter(
 		return nil, err
 	}
 	return &CountryLimiter{
-		db:        db,
-		countries: countries,
+		db:                         db,
+		countries:                  countries,
+		limitRateForOtherCountries: limitRateForOtherCountries,
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
@@ -58,14 +61,30 @@ func (l *CountryLimiter) Rule(r *http.Request) (*rl.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	if country == "" {
+		return &rl.Rule{ReqLimit: -1}, nil
+	}
+
 	for _, c := range l.countries {
 		if country == c {
+			if l.limitRateForOtherCountries {
+				return &rl.Rule{ReqLimit: -1}, nil
+			}
 			return &rl.Rule{
 				Key:       remoteAddr,
 				ReqLimit:  l.reqLimit,
 				WindowLen: l.windowLen,
 			}, nil
 		}
+	}
+
+	if l.limitRateForOtherCountries {
+		return &rl.Rule{
+			Key:       remoteAddr,
+			ReqLimit:  l.reqLimit,
+			WindowLen: l.windowLen,
+		}, nil
 	}
 	return &rl.Rule{ReqLimit: -1}, nil
 }

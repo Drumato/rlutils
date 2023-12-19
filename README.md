@@ -4,6 +4,14 @@ This is a repository for collecting rate limiters in [rl](https://github.com/2ma
 
 ## Usage
 
-TBD
+```go
 
+h := rlutils.NewHostLimiter(
+    reqLimit,
+    windowLen,
+    targetExtensions,
+    onRequestLimit,
+)
 
+handler := rl.New(h)
+```

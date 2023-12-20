@@ -19,6 +19,9 @@ type CountryLimiter struct {
 	skipCountries map[string]struct{}
 	BaseLimiter
 }
+type key int
+
+const ContextCountryKey key = iota
 
 // 国別のリクエスト数を制限する
 // 制限単位はIPアドレス
@@ -71,9 +74,15 @@ func (l *CountryLimiter) Rule(r *http.Request) (*rl.Rule, error) {
 	}
 
 	remoteAddr := strings.Split(r.RemoteAddr, ":")[0]
-	country, err := l.country(remoteAddr)
-	if err != nil {
-		return nil, err
+	country := ""
+	if r.Context().Value(ContextCountryKey) != nil {
+		country = r.Context().Value(ContextCountryKey).(string)
+	} else {
+		c, err := l.country(remoteAddr)
+		if err != nil {
+			return nil, err
+		}
+		country = c
 	}
 
 	limit := &rl.Rule{

@@ -18,49 +18,73 @@ func testHTTPRequest(remoteAddr string) *http.Request {
 func TestCountryLimiter(t *testing.T) {
 	abspath, _ := filepath.Abs("./testdata/GeoIP2-Country-Test.mmdb")
 	reqLimit := 10
-	cl, err := NewCountryLimiter(abspath, []string{"US"}, reqLimit, 1*time.Hour, nil, nil)
-	if err != nil {
-		t.Fatal(err)
-	}
 
 	// Define your test cases
 	testCases := []struct {
 		name            string
 		request         *http.Request
 		countries       []string
+		skipCountries   []string
 		expectedCountry string
 		expectedError   bool
-		allowed         bool
+		shouldLimit     bool
 	}{
 		{
 			name:            "Valid IP from United States With Port",
 			request:         testHTTPRequest("50.114.0.1:1234"),
 			expectedCountry: "US",
 			countries:       []string{"US"},
-			allowed:         true,
+			shouldLimit:     true,
 			expectedError:   false,
 		},
 		{
 			name:            "Valid IP from United States",
 			request:         testHTTPRequest("50.114.0.1"),
 			expectedCountry: "US",
-			allowed:         true,
+			shouldLimit:     true,
 			expectedError:   false,
 		},
-
 		{
 			name:            "Invalid IP format",
 			request:         testHTTPRequest("invalid-ip"),
 			expectedCountry: "",
-			allowed:         false,
+			shouldLimit:     false,
 			expectedError:   true,
+		},
+		{
+			name:            "Valid IP from United States With WildCard",
+			request:         testHTTPRequest("50.114.0.1"),
+			expectedCountry: "US",
+			countries:       []string{"*"},
+			shouldLimit:     true,
+			expectedError:   false,
+		},
+		{
+			name:            "Valid IP from United States With Skip country",
+			request:         testHTTPRequest("50.114.0.1"),
+			expectedCountry: "US",
+			countries:       []string{"*"},
+			skipCountries:   []string{"US"},
+			shouldLimit:     false,
+			expectedError:   false,
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Run the country function to get the ISO country code
-
+			cl, err := NewCountryLimiter(
+				abspath,
+				[]string{"US"},
+				tc.skipCountries,
+				reqLimit,
+				1*time.Hour,
+				nil,
+				nil,
+			)
+			if err != nil {
+				t.Fatal(err)
+			}
 			remoteAddr := strings.Split(tc.request.RemoteAddr, ":")[0]
 			country, err := cl.country(remoteAddr)
 			if tc.expectedError {
@@ -82,11 +106,11 @@ func TestCountryLimiter(t *testing.T) {
 					t.Errorf("Rule method returned an unexpected error: %v", ruleErr)
 				}
 			} else {
-				if tc.allowed && (rule == nil || rule.ReqLimit != reqLimit) {
-					t.Errorf("Expected allowed rule with limit %d, but got %+v", reqLimit, rule)
+				if tc.shouldLimit && (rule == nil || rule.ReqLimit != reqLimit) {
+					t.Errorf("Expected shouldLimit rule with limit %d, but got %+v", reqLimit, rule)
 				}
-				if !tc.allowed && (rule == nil || rule.ReqLimit != -1) {
-					t.Errorf("Expected disallowed rule with no limiting, but got %+v", rule)
+				if !tc.shouldLimit && (rule == nil || rule.ReqLimit != -1) {
+					t.Errorf("Expected disshouldLimit rule with no limiting, but got %+v", rule)
 				}
 			}
 

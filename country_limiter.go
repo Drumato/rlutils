@@ -3,6 +3,7 @@ package rlutils
 // limit from ip with maxMindDB
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -13,8 +14,9 @@ import (
 )
 
 type CountryLimiter struct {
-	db        *maxminddb.Reader
-	countries []string
+	db            *maxminddb.Reader
+	countries     map[string]struct{}
+	skipCountries map[string]struct{}
 	BaseLimiter
 }
 
@@ -23,6 +25,7 @@ type CountryLimiter struct {
 func NewCountryLimiter(
 	dbPath string,
 	countries []string,
+	skipCountries []string,
 	reqLimit int,
 	windowLen time.Duration,
 	targetExtensions []string,
@@ -32,9 +35,23 @@ func NewCountryLimiter(
 	if err != nil {
 		return nil, err
 	}
+	cm := map[string]struct{}{}
+	scm := map[string]struct{}{}
+
+	for _, c := range countries {
+		cm[c] = struct{}{}
+	}
+
+	for _, c := range skipCountries {
+		if c == "*" {
+			return nil, fmt.Errorf("invalid skip country: %s", c)
+		}
+		scm[c] = struct{}{}
+	}
 	return &CountryLimiter{
-		db:        db,
-		countries: countries,
+		db:            db,
+		countries:     cm,
+		skipCountries: scm,
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
@@ -58,16 +75,35 @@ func (l *CountryLimiter) Rule(r *http.Request) (*rl.Rule, error) {
 	if err != nil {
 		return nil, err
 	}
-	for _, c := range l.countries {
-		if country == c {
-			return &rl.Rule{
-				Key:       remoteAddr,
-				ReqLimit:  l.reqLimit,
-				WindowLen: l.windowLen,
-			}, nil
-		}
+
+	limit := &rl.Rule{
+		Key:       remoteAddr,
+		ReqLimit:  l.reqLimit,
+		WindowLen: l.windowLen,
 	}
-	return &rl.Rule{ReqLimit: -1}, nil
+	noLimit := &rl.Rule{ReqLimit: -1}
+
+	if country == "" {
+		return noLimit, nil
+	}
+
+	if _, ok := l.skipCountries[country]; ok {
+		return noLimit, nil
+	}
+
+	if _, ok := l.countries["*"]; ok {
+		return limit, nil
+
+	}
+
+	if _, ok := l.countries[country]; ok {
+		return &rl.Rule{
+			Key:       remoteAddr,
+			ReqLimit:  l.reqLimit,
+			WindowLen: l.windowLen,
+		}, nil
+	}
+	return noLimit, nil
 }
 
 func (l *CountryLimiter) country(remoteAddr string) (string, error) {

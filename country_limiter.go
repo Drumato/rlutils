@@ -103,7 +103,7 @@ func (l *CountryLimiter) Rule(r *http.Request) (*rl.Rule, error) {
 			WindowLen: l.windowLen,
 		}, nil
 	}
-	return &rl.Rule{ReqLimit: -1}, nil
+	return noLimit, nil
 }
 
 func (l *CountryLimiter) country(remoteAddr string) (string, error) {

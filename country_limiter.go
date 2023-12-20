@@ -19,8 +19,9 @@ type CountryLimiter struct {
 	skipCountries map[string]struct{}
 	BaseLimiter
 }
+type key int
 
-const ContextCountryKey = "countryCode"
+const ContextCountryKey key = iota
 
 // 国別のリクエスト数を制限する
 // 制限単位はIPアドレス

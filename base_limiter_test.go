@@ -1,26 +1,10 @@
 package rlutils
 
 import (
-	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
-
-	"github.com/2manymws/rl"
 )
 
-// Helper function to generate a request context suitable for testing.
-func createTestContext(limit int, windowLen time.Duration, next http.Handler) *rl.Context {
-	return &rl.Context{
-		StatusCode: http.StatusTooManyRequests,
-		Err:        rl.ErrRateLimitExceeded,
-		// Limiter, RequestLimit, and other fields would be initialized here as needed
-		Next:               next,
-		RequestLimit:       limit,
-		RateLimitRemaining: 0,
-		WindowLen:          windowLen,
-	}
-}
 func TestBaseLimiter_isTargetExtensions(t *testing.T) {
 	tests := []struct {
 		name             string

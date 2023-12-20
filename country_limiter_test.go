@@ -27,37 +27,45 @@ func TestCountryLimiter(t *testing.T) {
 		skipCountries   []string
 		expectedCountry string
 		expectedError   bool
-		allowed         bool
+		shouldLimit     bool
 	}{
 		{
 			name:            "Valid IP from United States With Port",
 			request:         testHTTPRequest("50.114.0.1:1234"),
 			expectedCountry: "US",
 			countries:       []string{"US"},
-			allowed:         true,
+			shouldLimit:     true,
 			expectedError:   false,
 		},
 		{
 			name:            "Valid IP from United States",
 			request:         testHTTPRequest("50.114.0.1"),
 			expectedCountry: "US",
-			allowed:         true,
+			shouldLimit:     true,
 			expectedError:   false,
 		},
 		{
 			name:            "Invalid IP format",
 			request:         testHTTPRequest("invalid-ip"),
 			expectedCountry: "",
-			allowed:         false,
+			shouldLimit:     false,
 			expectedError:   true,
 		},
 		{
+			name:            "Valid IP from United States With WildCard",
+			request:         testHTTPRequest("50.114.0.1"),
+			expectedCountry: "US",
+			countries:       []string{"*"},
+			shouldLimit:     true,
+			expectedError:   false,
+		},
+		{
 			name:            "Valid IP from United States With Skip country",
-			request:         testHTTPRequest("1.1.1.1"),
-			expectedCountry: "",
+			request:         testHTTPRequest("50.114.0.1"),
+			expectedCountry: "US",
 			countries:       []string{"*"},
 			skipCountries:   []string{"US"},
-			allowed:         false,
+			shouldLimit:     false,
 			expectedError:   false,
 		},
 	}
@@ -98,11 +106,11 @@ func TestCountryLimiter(t *testing.T) {
 					t.Errorf("Rule method returned an unexpected error: %v", ruleErr)
 				}
 			} else {
-				if tc.allowed && (rule == nil || rule.ReqLimit != reqLimit) {
-					t.Errorf("Expected allowed rule with limit %d, but got %+v", reqLimit, rule)
+				if tc.shouldLimit && (rule == nil || rule.ReqLimit != reqLimit) {
+					t.Errorf("Expected shouldLimit rule with limit %d, but got %+v", reqLimit, rule)
 				}
-				if !tc.allowed && (rule == nil || rule.ReqLimit != -1) {
-					t.Errorf("Expected disallowed rule with no limiting, but got %+v", rule)
+				if !tc.shouldLimit && (rule == nil || rule.ReqLimit != -1) {
+					t.Errorf("Expected disshouldLimit rule with no limiting, but got %+v", rule)
 				}
 			}
 

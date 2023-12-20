@@ -15,8 +15,8 @@ import (
 
 type CountryLimiter struct {
 	db            *maxminddb.Reader
-	countries     map[string]bool
-	skipCountries map[string]bool
+	countries     map[string]struct{}
+	skipCountries map[string]struct{}
 	BaseLimiter
 }
 

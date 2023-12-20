@@ -35,18 +35,18 @@ func NewCountryLimiter(
 	if err != nil {
 		return nil, err
 	}
-	cm := map[string]bool{}
-	scm := map[string]bool{}
+	cm := map[string]struct{}{}
+	scm := map[string]struct{}{}
 
 	for _, c := range countries {
-		cm[c] = true
+		cm[c] = struct{}{}
 	}
 
 	for _, c := range skipCountries {
 		if c == "*" {
 			return nil, fmt.Errorf("invalid skip country: %s", c)
 		}
-		scm[c] = true
+		scm[c] = struct{}{}
 	}
 	return &CountryLimiter{
 		db:            db,

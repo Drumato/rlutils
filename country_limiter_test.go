@@ -21,13 +21,13 @@ func TestCountryLimiter(t *testing.T) {
 
 	// Define your test cases
 	testCases := []struct {
-		name                       string
-		request                    *http.Request
-		countries                  []string
-		limitRateForOtherCountries bool
-		expectedCountry            string
-		expectedError              bool
-		allowed                    bool
+		name            string
+		request         *http.Request
+		countries       []string
+		skipCountries   []string
+		expectedCountry string
+		expectedError   bool
+		allowed         bool
 	}{
 		{
 			name:            "Valid IP from United States With Port",
@@ -52,23 +52,22 @@ func TestCountryLimiter(t *testing.T) {
 			expectedError:   true,
 		},
 		{
-			name:                       "Valid IP from United States With Port and limitRateForOtherCountries,empty country",
-			request:                    testHTTPRequest("1.1.1.1"),
-			expectedCountry:            "",
-			countries:                  []string{"US"},
-			limitRateForOtherCountries: true,
-			allowed:                    false,
-			expectedError:              false,
+			name:            "Valid IP from United States With Port and limitRateForOtherCountries,empty country",
+			request:         testHTTPRequest("1.1.1.1"),
+			expectedCountry: "",
+			countries:       []string{"US"},
+			allowed:         false,
+			expectedError:   false,
 		},
 
 		{
-			name:                       "Valid IP from United States With Port and limitRateForOtherCountries,Franch",
-			request:                    testHTTPRequest("67.43.156.0"),
-			expectedCountry:            "BT",
-			countries:                  []string{"US"},
-			limitRateForOtherCountries: true,
-			allowed:                    true,
-			expectedError:              false,
+			name:            "Valid IP from United States With Port and limitRateForOtherCountries,Franch",
+			request:         testHTTPRequest("67.43.156.0"),
+			expectedCountry: "BT",
+			countries:       []string{"*"},
+			skipCountries:   []string{"US"},
+			allowed:         true,
+			expectedError:   false,
 		},
 	}
 
@@ -78,10 +77,10 @@ func TestCountryLimiter(t *testing.T) {
 			cl, err := NewCountryLimiter(
 				abspath,
 				[]string{"US"},
+				tc.skipCountries,
 				reqLimit,
 				1*time.Hour,
 				nil,
-				tc.limitRateForOtherCountries,
 				nil,
 			)
 			if err != nil {

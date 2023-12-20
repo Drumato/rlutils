@@ -3,6 +3,7 @@ package rlutils
 // limit from ip with maxMindDB
 
 import (
+	"fmt"
 	"net"
 	"net/http"
 	"strings"
@@ -13,9 +14,9 @@ import (
 )
 
 type CountryLimiter struct {
-	db                         *maxminddb.Reader
-	limitRateForOtherCountries bool
-	countries                  []string
+	db            *maxminddb.Reader
+	countries     map[string]bool
+	skipCountries map[string]bool
 	BaseLimiter
 }
 
@@ -24,20 +25,33 @@ type CountryLimiter struct {
 func NewCountryLimiter(
 	dbPath string,
 	countries []string,
+	skipCountries []string,
 	reqLimit int,
 	windowLen time.Duration,
 	targetExtensions []string,
-	limitRateForOtherCountries bool, // 他の国々にレートリミットを適用する
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
 ) (*CountryLimiter, error) {
 	db, err := maxminddb.Open(dbPath)
 	if err != nil {
 		return nil, err
 	}
+	cm := map[string]bool{}
+	scm := map[string]bool{}
+
+	for _, c := range countries {
+		cm[c] = true
+	}
+
+	for _, c := range skipCountries {
+		if c == "*" {
+			return nil, fmt.Errorf("invalid skip country: %s", c)
+		}
+		scm[c] = true
+	}
 	return &CountryLimiter{
-		db:                         db,
-		countries:                  countries,
-		limitRateForOtherCountries: limitRateForOtherCountries,
+		db:            db,
+		countries:     cm,
+		skipCountries: scm,
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
@@ -62,24 +76,27 @@ func (l *CountryLimiter) Rule(r *http.Request) (*rl.Rule, error) {
 		return nil, err
 	}
 
+	limit := &rl.Rule{
+		Key:       remoteAddr,
+		ReqLimit:  l.reqLimit,
+		WindowLen: l.windowLen,
+	}
+	noLimit := &rl.Rule{ReqLimit: -1}
+
 	if country == "" {
-		return &rl.Rule{ReqLimit: -1}, nil
+		return noLimit, nil
 	}
 
-	for _, c := range l.countries {
-		if country == c {
-			if l.limitRateForOtherCountries {
-				return &rl.Rule{ReqLimit: -1}, nil
-			}
-			return &rl.Rule{
-				Key:       remoteAddr,
-				ReqLimit:  l.reqLimit,
-				WindowLen: l.windowLen,
-			}, nil
-		}
+	if _, ok := l.skipCountries[country]; ok {
+		return noLimit, nil
 	}
 
-	if l.limitRateForOtherCountries {
+	if _, ok := l.countries["*"]; !ok {
+		return limit, nil
+
+	}
+
+	if _, ok := l.countries[country]; ok {
 		return &rl.Rule{
 			Key:       remoteAddr,
 			ReqLimit:  l.reqLimit,

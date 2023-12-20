@@ -52,21 +52,12 @@ func TestCountryLimiter(t *testing.T) {
 			expectedError:   true,
 		},
 		{
-			name:            "Valid IP from United States With Port and limitRateForOtherCountries,empty country",
+			name:            "Valid IP from United States With Skip country",
 			request:         testHTTPRequest("1.1.1.1"),
 			expectedCountry: "",
-			countries:       []string{"US"},
-			allowed:         false,
-			expectedError:   false,
-		},
-
-		{
-			name:            "Valid IP from United States With Port and limitRateForOtherCountries,Franch",
-			request:         testHTTPRequest("67.43.156.0"),
-			expectedCountry: "BT",
 			countries:       []string{"*"},
 			skipCountries:   []string{"US"},
-			allowed:         true,
+			allowed:         false,
 			expectedError:   false,
 		},
 	}

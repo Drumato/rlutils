@@ -91,7 +91,7 @@ func (l *CountryLimiter) Rule(r *http.Request) (*rl.Rule, error) {
 		return noLimit, nil
 	}
 
-	if _, ok := l.countries["*"]; !ok {
+	if _, ok := l.countries["*"]; ok {
 		return limit, nil
 
 	}

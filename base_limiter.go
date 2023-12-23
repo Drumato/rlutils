@@ -11,6 +11,11 @@ import (
 	"github.com/2manymws/rl/counter"
 )
 
+const (
+	remoteAddrKey = "remote_addr"
+	hostKey       = "host"
+)
+
 type BaseLimiter struct {
 	reqLimit         int `mapstructure:"req_limit"`
 	windowLen        time.Duration
@@ -60,7 +65,7 @@ func (l *BaseLimiter) isTargetExtensions(r *http.Request) bool {
 	return false
 }
 func validateKey(key string) error {
-	for _, k := range []string{"remote_addr", "host"} {
+	for _, k := range []string{remoteAddrKey, hostKey} {
 		if k == key {
 			return nil
 		}

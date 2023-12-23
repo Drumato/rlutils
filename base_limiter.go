@@ -1,6 +1,7 @@
 package rlutils
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -57,4 +58,20 @@ func (l *BaseLimiter) isTargetExtensions(r *http.Request) bool {
 		}
 	}
 	return false
+}
+func validateKey(key string) error {
+	for _, k := range []string{"remote_addr", "host"} {
+		if k == key {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid key: %s", key)
+}
+
+func fillKey(r *http.Request, key string) string {
+	if key == "remote_addr" {
+		remoteAddr := strings.Split(r.RemoteAddr, ":")[0]
+		return remoteAddr
+	}
+	return r.Host
 }

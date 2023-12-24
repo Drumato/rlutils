@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	remoteAddrKey = "remote_addr"
-	hostKey       = "host"
+	RemoteAddrKey = "remote_addr"
+	HostKey       = "host"
 )
 
 type BaseLimiter struct {

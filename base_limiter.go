@@ -65,7 +65,7 @@ func (l *BaseLimiter) isTargetExtensions(r *http.Request) bool {
 	return false
 }
 func validateKey(key string) error {
-	for _, k := range []string{remoteAddrKey, hostKey} {
+	for _, k := range []string{RemoteAddrKey, HostKey} {
 		if k == key {
 			return nil
 		}
@@ -74,7 +74,7 @@ func validateKey(key string) error {
 }
 
 func fillKey(r *http.Request, key string) string {
-	if key == "remote_addr" {
+	if key == RemoteAddrKey {
 		remoteAddr := strings.Split(r.RemoteAddr, ":")[0]
 		return remoteAddr
 	}

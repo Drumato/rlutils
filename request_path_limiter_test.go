@@ -20,6 +20,7 @@ func TestRequestPathLimiter(t *testing.T) {
 		ignorePrefixes      []string
 		ignoreSuffixes      []string
 		path                string
+		key                 string
 		expectedToBeLimited bool
 		expectedKey         string
 	}{
@@ -29,6 +30,7 @@ func TestRequestPathLimiter(t *testing.T) {
 			prefixes:            []string{"/api/"},
 			suffixes:            []string{"/details"},
 			path:                "/accounts/user/profile",
+			key:                 "host",
 			expectedToBeLimited: true,
 			expectedKey:         "example.com/user",
 		},
@@ -38,6 +40,7 @@ func TestRequestPathLimiter(t *testing.T) {
 			prefixes:            []string{"/api/"},
 			suffixes:            []string{"/details"},
 			path:                "/api/users/1",
+			key:                 "host",
 			expectedToBeLimited: true,
 			expectedKey:         "example.com/api/",
 		},
@@ -47,6 +50,7 @@ func TestRequestPathLimiter(t *testing.T) {
 			prefixes:            []string{"/api/"},
 			suffixes:            []string{"/details"},
 			path:                "/users/1/details",
+			key:                 "host",
 			expectedToBeLimited: true,
 			expectedKey:         "example.com/details",
 		},
@@ -56,6 +60,7 @@ func TestRequestPathLimiter(t *testing.T) {
 			prefixes:            []string{"/api/"},
 			suffixes:            []string{"/details"},
 			path:                "/about",
+			key:                 "host",
 			expectedToBeLimited: false,
 		},
 		{
@@ -64,6 +69,7 @@ func TestRequestPathLimiter(t *testing.T) {
 			prefixes:            []string{"/abcd"},
 			suffixes:            []string{"/abcde"},
 			path:                "/abcdefg",
+			key:                 "host",
 			ignoreContains:      []string{"ab"},
 			expectedToBeLimited: false,
 			expectedKey:         "",
@@ -74,6 +80,7 @@ func TestRequestPathLimiter(t *testing.T) {
 			prefixes:            []string{"/abcd"},
 			suffixes:            []string{"/abcde"},
 			path:                "/abcdefg",
+			key:                 "host",
 			ignorePrefixes:      []string{"/a"},
 			expectedToBeLimited: false,
 			expectedKey:         "",
@@ -84,9 +91,20 @@ func TestRequestPathLimiter(t *testing.T) {
 			prefixes:            []string{"/abcd"},
 			suffixes:            []string{"/abcde"},
 			path:                "/abcdefg",
+			key:                 "host",
 			ignoreSuffixes:      []string{"g"},
 			expectedToBeLimited: false,
 			expectedKey:         "",
+		},
+		{
+			name:                "Path contains limited segment with remote ip",
+			contains:            []string{"/user"},
+			prefixes:            []string{"/api/"},
+			suffixes:            []string{"/details"},
+			path:                "/accounts/user/profile",
+			key:                 "remote_addr",
+			expectedToBeLimited: true,
+			expectedKey:         "127.0.0.1/user",
 		},
 	}
 
@@ -99,7 +117,7 @@ func TestRequestPathLimiter(t *testing.T) {
 			reqLimit := 5
 			windowLen := time.Minute
 
-			limiter := NewRequestPathLimiter(
+			limiter, _ := NewRequestPathLimiter(
 				tc.contains,
 				tc.prefixes,
 				tc.suffixes,
@@ -108,6 +126,7 @@ func TestRequestPathLimiter(t *testing.T) {
 				tc.ignoreSuffixes,
 				reqLimit,
 				windowLen,
+				tc.key,
 				nil,
 				nil,
 			)
@@ -116,6 +135,7 @@ func TestRequestPathLimiter(t *testing.T) {
 			limiter.Counter = mockCounter
 
 			req := httptest.NewRequest(http.MethodGet, tc.path, nil)
+			req.RemoteAddr = "127.0.0.1"
 			rule, err := limiter.Rule(req)
 			assert.NoError(t, err)
 

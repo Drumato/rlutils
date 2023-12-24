@@ -1,6 +1,7 @@
 package rlutils
 
 import (
+	"fmt"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -8,6 +9,11 @@ import (
 
 	"github.com/2manymws/rl"
 	"github.com/2manymws/rl/counter"
+)
+
+const (
+	RemoteAddrKey = "remote_addr"
+	HostKey       = "host"
 )
 
 type BaseLimiter struct {
@@ -57,4 +63,20 @@ func (l *BaseLimiter) isTargetExtensions(r *http.Request) bool {
 		}
 	}
 	return false
+}
+func validateKey(key string) error {
+	for _, k := range []string{RemoteAddrKey, HostKey} {
+		if k == key {
+			return nil
+		}
+	}
+	return fmt.Errorf("invalid key: %s", key)
+}
+
+func fillKey(r *http.Request, key string) string {
+	if key == RemoteAddrKey {
+		remoteAddr := strings.Split(r.RemoteAddr, ":")[0]
+		return remoteAddr
+	}
+	return r.Host
 }

@@ -15,6 +15,7 @@ type RequestPathLimiter struct {
 	ignorePathContains  []string
 	ignorePathPrefixes  []string
 	ignorePathSuffixes  []string
+	key                 string
 	BaseLimiter
 }
 
@@ -29,9 +30,15 @@ func NewRequestPathLimiter(
 	ignorePathSuffixes []string,
 	reqLimit int,
 	windowLen time.Duration,
+	key string,
 	targetExtensions []string,
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
-) *RequestPathLimiter {
+) (*RequestPathLimiter, error) {
+	err := validateKey(key)
+	if err != nil {
+		return nil, err
+	}
+
 	return &RequestPathLimiter{
 		requestPathContains: requestPathContains,
 		requestPathPrefixes: requestPathPrefixes,
@@ -39,13 +46,14 @@ func NewRequestPathLimiter(
 		ignorePathContains:  ignorePathContains,
 		ignorePathPrefixes:  ignorePathPrefixes,
 		ignorePathSuffixes:  ignorePathSuffixes,
+		key:                 key,
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
 			targetExtensions,
 			onRequestLimit,
 		),
-	}
+	}, nil
 }
 
 func (l *RequestPathLimiter) Name() string {
@@ -92,7 +100,7 @@ func (l *RequestPathLimiter) Rule(r *http.Request) (*rl.Rule, error) {
 					}
 					if !ignored {
 						return &rl.Rule{
-							Key:       r.Host + path,
+							Key:       fillKey(r, l.key) + path,
 							ReqLimit:  l.reqLimit,
 							WindowLen: l.windowLen,
 						}, nil

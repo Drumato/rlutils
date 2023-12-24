@@ -17,6 +17,7 @@ func TestGetParameterLimiter(t *testing.T) {
 		name                string
 		getParameters       map[string]string
 		queryString         string
+		key                 string
 		expectedToBeLimited bool
 		expectedKey         string
 	}{
@@ -26,6 +27,7 @@ func TestGetParameterLimiter(t *testing.T) {
 				"token": "123456",
 			},
 			queryString:         "?token=123456",
+			key:                 "host",
 			expectedToBeLimited: true,
 			expectedKey:         "example.com/token=123456",
 		},
@@ -35,6 +37,7 @@ func TestGetParameterLimiter(t *testing.T) {
 				"token": "123456",
 			},
 			queryString:         "?token=abcdef",
+			key:                 "host",
 			expectedToBeLimited: false,
 		},
 		{
@@ -44,8 +47,19 @@ func TestGetParameterLimiter(t *testing.T) {
 				"sessionId": "ABCDEF",
 			},
 			queryString:         "?token=123456&sessionId=XYZ",
+			key:                 "host",
 			expectedToBeLimited: true,
 			expectedKey:         "example.com/token=123456",
+		},
+		{
+			name: "Request with matching get parameter should be limited with remote ip",
+			getParameters: map[string]string{
+				"token": "123456",
+			},
+			queryString:         "?token=123456",
+			key:                 "remote_addr",
+			expectedToBeLimited: true,
+			expectedKey:         "127.0.0.1/token=123456",
 		},
 	}
 
@@ -58,10 +72,11 @@ func TestGetParameterLimiter(t *testing.T) {
 			reqLimit := 5
 			windowLen := time.Minute
 
-			limiter := NewGetParameterLimiter(
+			limiter, _ := NewGetParameterLimiter(
 				tc.getParameters,
 				reqLimit,
 				windowLen,
+				tc.key,
 				nil,
 				nil,
 			)
@@ -70,6 +85,7 @@ func TestGetParameterLimiter(t *testing.T) {
 			limiter.Counter = mockCounter
 
 			req := httptest.NewRequest(http.MethodGet, "http://example.com"+tc.queryString, nil)
+			req.RemoteAddr = "127.0.0.1:12345"
 			rule, err := limiter.Rule(req)
 			assert.NoError(t, err)
 

@@ -9,6 +9,7 @@ import (
 
 type GetParameterLimiter struct {
 	getParameters map[string]string
+	key           string
 	BaseLimiter
 }
 
@@ -18,18 +19,24 @@ func NewGetParameterLimiter(
 	getParameters map[string]string,
 	reqLimit int,
 	windowLen time.Duration,
+	key string,
 	targetExtensions []string,
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
-) *GetParameterLimiter {
+) (*GetParameterLimiter, error) {
+	err := validateKey(key)
+	if err != nil {
+		return nil, err
+	}
 	return &GetParameterLimiter{
 		getParameters: getParameters,
+		key:           key,
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
 			targetExtensions,
 			onRequestLimit,
 		),
-	}
+	}, nil
 }
 
 func (l *GetParameterLimiter) Name() string {
@@ -43,7 +50,7 @@ func (l *GetParameterLimiter) Rule(r *http.Request) (*rl.Rule, error) {
 	for k, v := range l.getParameters {
 		if r.URL.Query().Get(k) == v {
 			return &rl.Rule{
-				Key:       r.Host + "/" + k + "=" + v,
+				Key:       fillKey(r, l.key) + "/" + k + "=" + v,
 				ReqLimit:  l.reqLimit,
 				WindowLen: l.windowLen,
 			}, nil

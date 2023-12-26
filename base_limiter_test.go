@@ -54,6 +54,12 @@ func TestBaseLimiter_isTargetExtensions(t *testing.T) {
 			requestPath:      "/file",
 			want:             false,
 		},
+		{
+			name:             "null extention",
+			targetExtensions: []string{""},
+			requestPath:      "/file",
+			want:             true,
+		},
 	}
 
 	for _, tt := range tests {

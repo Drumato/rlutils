@@ -1,6 +1,10 @@
 # Changelog
 
 
+## [v0.0.7](https://github.com/2manymws/rlutils/compare/v0.0.6...v0.0.7) - 2023-12-26
+### Other Changes
+- fix null pattern by @pyama86 in https://github.com/2manymws/rlutils/pull/9
+
 ## [v0.0.6](https://github.com/2manymws/rlutils/compare/v0.0.5...v0.0.6) - 2023-12-26
 ### Other Changes
 - Less computational complexity is better. by @pyama86 in https://github.com/2manymws/rlutils/pull/7

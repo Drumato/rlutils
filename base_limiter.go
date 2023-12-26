@@ -19,7 +19,7 @@ const (
 type BaseLimiter struct {
 	reqLimit         int `mapstructure:"req_limit"`
 	windowLen        time.Duration
-	targetExtensions []string
+	targetExtensions map[string]struct{}
 	onRequestLimit   func(*rl.Context, string) http.HandlerFunc
 	rl.Counter
 }
@@ -31,12 +31,21 @@ func NewBaseLimiter(
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
 ) BaseLimiter {
 	ttl := windowLen * 2 // 最低2回分のウィンドウ分のカウンタを維持する
+	targetExtensionsMap := make(map[string]struct{}, len(targetExtensions))
+	if len(targetExtensions) > 0 {
+		for _, ext := range targetExtensions {
+			if ext[0] != '.' {
+				ext = "." + ext
+			}
+			targetExtensionsMap[strings.ToLower(ext)] = struct{}{}
+		}
+	}
 	return BaseLimiter{
 		reqLimit:         reqLimit,
 		windowLen:        windowLen,
 		Counter:          counter.New(ttl),
+		targetExtensions: targetExtensionsMap,
 		onRequestLimit:   onRequestLimit,
-		targetExtensions: targetExtensions,
 	}
 }
 
@@ -56,13 +65,9 @@ func (l *BaseLimiter) isTargetExtensions(r *http.Request) bool {
 	if len(l.targetExtensions) == 0 {
 		return true
 	}
-	extension := filepath.Ext(r.URL.Path)
-	for _, ext := range l.targetExtensions {
-		if strings.EqualFold(ext, extension) {
-			return true
-		}
-	}
-	return false
+	extension := strings.ToLower(filepath.Ext(r.URL.Path))
+	_, ok := l.targetExtensions[extension]
+	return ok
 }
 func validateKey(key string) error {
 	for _, k := range []string{RemoteAddrKey, HostKey} {

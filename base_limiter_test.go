@@ -19,6 +19,12 @@ func TestBaseLimiter_isTargetExtensions(t *testing.T) {
 			want:             true,
 		},
 		{
+			name:             "Target extension .txt",
+			targetExtensions: []string{"txt"},
+			requestPath:      "/file.txt",
+			want:             true,
+		},
+		{
 			name:             "Target extension .jpg among others",
 			targetExtensions: []string{".png", ".jpg", ".gif"},
 			requestPath:      "/image.jpg",
@@ -53,9 +59,12 @@ func TestBaseLimiter_isTargetExtensions(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Create a BaseLimiter with specific target extensions.
-			bl := &BaseLimiter{
-				targetExtensions: tt.targetExtensions,
-			}
+			bl := NewBaseLimiter(
+				0,
+				0,
+				tt.targetExtensions,
+				nil,
+			)
 			// Create an HTTP request with the test case path.
 			req := httptest.NewRequest("GET", tt.requestPath, nil)
 			// Check if the request extension is in the target list.

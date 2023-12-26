@@ -34,7 +34,7 @@ func NewBaseLimiter(
 	targetExtensionsMap := make(map[string]struct{}, len(targetExtensions))
 	if len(targetExtensions) > 0 {
 		for _, ext := range targetExtensions {
-			if ext[0] != '.' {
+			if len(ext) > 0 && ext[0] != '.' {
 				ext = "." + ext
 			}
 			targetExtensionsMap[strings.ToLower(ext)] = struct{}{}

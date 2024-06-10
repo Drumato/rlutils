@@ -92,7 +92,7 @@ func (l *BaseLimiter) Name() string {
 }
 
 func (l *BaseLimiter) IsTargetRequest(r *http.Request) bool {
-	return l.isTargetExtensions(r) && l.isTargetMethods(r)
+	return l.isTargetExtensions(r) && l.isTargetMethod(r)
 }
 
 func (l *BaseLimiter) isTargetExtensions(r *http.Request) bool {
@@ -104,7 +104,7 @@ func (l *BaseLimiter) isTargetExtensions(r *http.Request) bool {
 	return ok
 }
 
-func (l *BaseLimiter) isTargetMethods(r *http.Request) bool {
+func (l *BaseLimiter) isTargetMethod(r *http.Request) bool {
 	if len(l.targetMethods) == 0 {
 		return true
 	}

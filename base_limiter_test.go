@@ -12,8 +12,7 @@ func TestBaseLimiter_isTargetExtensions(t *testing.T) {
 		requestPath      string
 		want             bool
 	}{
-		{
-			name:             "Target extension .txt",
+		{name: "Target extension .txt",
 			targetExtensions: []string{".txt"},
 			requestPath:      "/file.txt",
 			want:             true,
@@ -68,8 +67,8 @@ func TestBaseLimiter_isTargetExtensions(t *testing.T) {
 			bl := NewBaseLimiter(
 				0,
 				0,
-				tt.targetExtensions,
 				nil,
+				TargetExtensions(tt.targetExtensions),
 			)
 			// Create an HTTP request with the test case path.
 			req := httptest.NewRequest("GET", tt.requestPath, nil)
@@ -77,6 +76,69 @@ func TestBaseLimiter_isTargetExtensions(t *testing.T) {
 			got := bl.isTargetExtensions(req)
 			if got != tt.want {
 				t.Errorf("isTargetExtensions() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBaseLimiter_isTargetMethod(t *testing.T) {
+	tests := []struct {
+		name          string
+		targetMethods []string
+		requestMethod string
+		want          bool
+	}{
+		{
+			name:          "Target method GET",
+			targetMethods: []string{"GET"},
+			requestMethod: "GET",
+			want:          true,
+		},
+		{
+			name:          "Target method POST",
+			targetMethods: []string{"POST"},
+			requestMethod: "POST",
+			want:          true,
+		},
+		{
+			name:          "Method not in target list",
+			targetMethods: []string{"GET", "POST"},
+			requestMethod: "DELETE",
+			want:          false,
+		},
+		{
+			name:          "Case insensitive method check",
+			targetMethods: []string{"get"},
+			requestMethod: "GET",
+			want:          true,
+		},
+		{
+			name:          "No target methods set",
+			targetMethods: []string{},
+			requestMethod: "GET",
+			want:          true,
+		},
+		{
+			name:          "Multiple methods, target hit",
+			targetMethods: []string{"GET", "POST", "PUT"},
+			requestMethod: "PUT",
+			want:          true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			// Create a BaseLimiter with specific target methods.
+			bl := NewBaseLimiter(
+				0,
+				0,
+				nil,
+				TargetMethods(tt.targetMethods),
+			)
+			req := httptest.NewRequest(tt.requestMethod, "/some/path", nil)
+			got := bl.isTargetMethod(req)
+			if got != tt.want {
+				t.Errorf("isTargetMethod() = %v, want %v", got, tt.want)
 			}
 		})
 	}

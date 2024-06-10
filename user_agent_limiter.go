@@ -19,16 +19,16 @@ func NewUserAgentLimiter(
 	userAgents []string,
 	reqLimit int,
 	windowLen time.Duration,
-	targetExtensions []string,
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
+	setter ...Option,
 ) *UserAgentLimiter {
 	return &UserAgentLimiter{
 		userAgents: userAgents,
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
-			targetExtensions,
 			onRequestLimit,
+			setter...,
 		),
 	}
 }

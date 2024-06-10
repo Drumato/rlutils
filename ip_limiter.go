@@ -17,15 +17,15 @@ type IPLimiter struct {
 func NewIPLimiter(
 	reqLimit int,
 	windowLen time.Duration,
-	targetExtensions []string,
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
+	setter ...Option,
 ) *IPLimiter {
 	return &IPLimiter{
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
-			targetExtensions,
 			onRequestLimit,
+			setter...,
 		),
 	}
 }

@@ -121,14 +121,13 @@ func TestRequestPathLimiter(t *testing.T) {
 				tc.contains,
 				tc.prefixes,
 				tc.suffixes,
-				tc.ignoreContains,
-				tc.ignorePrefixes,
-				tc.ignoreSuffixes,
 				reqLimit,
 				windowLen,
 				tc.key,
 				nil,
-				nil,
+				IgnorePathContains(tc.ignoreContains),
+				IgnorePathPrefixes(tc.ignorePrefixes),
+				IgnorePathSuffixes(tc.ignoreSuffixes),
 			)
 
 			// Using the mock counter instead of the real one.

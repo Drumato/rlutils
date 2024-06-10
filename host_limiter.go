@@ -16,15 +16,15 @@ type HostLimiter struct {
 func NewHostLimiter(
 	reqLimit int,
 	windowLen time.Duration,
-	targetExtensions []string,
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
+	setter ...Option,
 ) *HostLimiter {
 	return &HostLimiter{
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
-			targetExtensions,
 			onRequestLimit,
+			setter...,
 		),
 	}
 }

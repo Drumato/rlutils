@@ -20,8 +20,8 @@ func NewGetParameterLimiter(
 	reqLimit int,
 	windowLen time.Duration,
 	key string,
-	targetExtensions []string,
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
+	setter ...Option,
 ) (*GetParameterLimiter, error) {
 	err := validateKey(key)
 	if err != nil {
@@ -33,8 +33,8 @@ func NewGetParameterLimiter(
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
-			targetExtensions,
 			onRequestLimit,
+			setter...,
 		),
 	}, nil
 }

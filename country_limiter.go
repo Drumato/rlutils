@@ -31,8 +31,8 @@ func NewCountryLimiter(
 	skipCountries []string,
 	reqLimit int,
 	windowLen time.Duration,
-	targetExtensions []string,
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
+	setter ...Option,
 ) (*CountryLimiter, error) {
 	db, err := maxminddb.Open(dbPath)
 	if err != nil {
@@ -58,8 +58,8 @@ func NewCountryLimiter(
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
-			targetExtensions,
 			onRequestLimit,
+			setter...,
 		),
 	}, nil
 }

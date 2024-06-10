@@ -31,8 +31,9 @@ func NewRequestPathLimiter(
 	reqLimit int,
 	windowLen time.Duration,
 	key string,
-	targetExtensions []string,
 	onRequestLimit func(*rl.Context, string) http.HandlerFunc,
+	setter ...Option,
+
 ) (*RequestPathLimiter, error) {
 	err := validateKey(key)
 	if err != nil {
@@ -50,8 +51,8 @@ func NewRequestPathLimiter(
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
 			windowLen,
-			targetExtensions,
 			onRequestLimit,
+			setter...,
 		),
 	}, nil
 }

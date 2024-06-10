@@ -68,8 +68,8 @@ func TestBaseLimiter_isTargetExtensions(t *testing.T) {
 			bl := NewBaseLimiter(
 				0,
 				0,
-				tt.targetExtensions,
 				nil,
+				TargetExtensions(tt.targetExtensions),
 			)
 			// Create an HTTP request with the test case path.
 			req := httptest.NewRequest("GET", tt.requestPath, nil)

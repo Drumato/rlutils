@@ -25,9 +25,6 @@ func NewRequestPathLimiter(
 	requestPathContains []string,
 	requestPathPrefixes []string,
 	requestPathSuffixes []string,
-	ignorePathContains []string,
-	ignorePathPrefixes []string,
-	ignorePathSuffixes []string,
 	reqLimit int,
 	windowLen time.Duration,
 	key string,
@@ -44,9 +41,6 @@ func NewRequestPathLimiter(
 		requestPathContains: requestPathContains,
 		requestPathPrefixes: requestPathPrefixes,
 		requestPathSuffixes: requestPathSuffixes,
-		ignorePathContains:  ignorePathContains,
-		ignorePathPrefixes:  ignorePathPrefixes,
-		ignorePathSuffixes:  ignorePathSuffixes,
 		key:                 key,
 		BaseLimiter: NewBaseLimiter(
 			reqLimit,
@@ -76,37 +70,11 @@ func (l *RequestPathLimiter) Rule(r *http.Request) (*rl.Rule, error) {
 		if len(st.path) > 0 {
 			for _, path := range st.path {
 				if st.f(r.URL.Path, path) {
-					ignored := false
-
-					// 除外条件にマッチする場合は無視する
-					for _, ignore := range []struct {
-						path []string
-						f    func(string, string) bool
-					}{
-						{l.ignorePathPrefixes, strings.HasPrefix},
-						{l.ignorePathSuffixes, strings.HasSuffix},
-						{l.ignorePathContains, strings.Contains},
-					} {
-						if len(ignore.path) > 0 {
-							for _, ipath := range ignore.path {
-								if ignore.f(r.URL.Path, ipath) {
-									ignored = true
-									break
-								}
-							}
-							if ignored {
-								break
-							}
-						}
-					}
-					if !ignored {
-						return &rl.Rule{
-							Key:       fillKey(r, l.key) + path,
-							ReqLimit:  l.reqLimit,
-							WindowLen: l.windowLen,
-						}, nil
-					}
-
+					return &rl.Rule{
+						Key:       fillKey(r, l.key) + path,
+						ReqLimit:  l.reqLimit,
+						WindowLen: l.windowLen,
+					}, nil
 				}
 			}
 		}

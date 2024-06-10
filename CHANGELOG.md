@@ -1,6 +1,10 @@
 # Changelog
 
 
+## [v0.0.8](https://github.com/2manymws/rlutils/compare/v0.0.7...v0.0.8) - 2024-06-10
+### Other Changes
+- I made it possible to specify target methods. by @pyama86 in https://github.com/2manymws/rlutils/pull/11
+
 ## [v0.0.7](https://github.com/2manymws/rlutils/compare/v0.0.6...v0.0.7) - 2023-12-26
 ### Other Changes
 - fix null pattern by @pyama86 in https://github.com/2manymws/rlutils/pull/9

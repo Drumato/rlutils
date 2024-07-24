@@ -17,24 +17,26 @@ const (
 )
 
 type Options struct {
-	TargetExtensions   map[string]struct{}
-	TargetMethods      map[string]struct{}
-	IgnorePathContains []string
-	IgnorePathPrefixes []string
-	IgnorePathSuffixes []string
+	TargetExtensions     map[string]struct{}
+	TargetMethods        map[string]struct{}
+	IgnorePathContains   []string
+	IgnorePathPrefixes   []string
+	IgnorePathSuffixes   []string
+	TargetConditionFuncs []func(r *http.Request) bool
 }
 
 type Option func(*Options)
 
 type BaseLimiter struct {
-	reqLimit           int `mapstructure:"req_limit"`
-	windowLen          time.Duration
-	targetExtensions   map[string]struct{}
-	targetMethods      map[string]struct{}
-	ignorePathContains []string
-	ignorePathPrefixes []string
-	ignorePathSuffixes []string
-	onRequestLimit     func(*rl.Context, string) http.HandlerFunc
+	reqLimit             int `mapstructure:"req_limit"`
+	windowLen            time.Duration
+	targetExtensions     map[string]struct{}
+	targetMethods        map[string]struct{}
+	ignorePathContains   []string
+	ignorePathPrefixes   []string
+	ignorePathSuffixes   []string
+	targetConditionFuncs []func(r *http.Request) bool
+	onRequestLimit       func(*rl.Context, string) http.HandlerFunc
 	rl.Counter
 }
 
@@ -55,15 +57,16 @@ func NewBaseLimiter(
 	}
 
 	return BaseLimiter{
-		reqLimit:           reqLimit,
-		windowLen:          windowLen,
-		Counter:            counter.New(ttl),
-		targetExtensions:   options.TargetExtensions,
-		targetMethods:      options.TargetMethods,
-		onRequestLimit:     onRequestLimit,
-		ignorePathContains: options.IgnorePathContains,
-		ignorePathPrefixes: options.IgnorePathPrefixes,
-		ignorePathSuffixes: options.IgnorePathSuffixes,
+		reqLimit:             reqLimit,
+		windowLen:            windowLen,
+		Counter:              counter.New(ttl),
+		targetExtensions:     options.TargetExtensions,
+		targetMethods:        options.TargetMethods,
+		onRequestLimit:       onRequestLimit,
+		ignorePathContains:   options.IgnorePathContains,
+		ignorePathPrefixes:   options.IgnorePathPrefixes,
+		ignorePathSuffixes:   options.IgnorePathSuffixes,
+		targetConditionFuncs: options.TargetConditionFuncs,
 	}
 }
 
@@ -89,6 +92,12 @@ func TargetMethods(targetMethods []string) Option {
 				args.TargetMethods[strings.ToLower(method)] = struct{}{}
 			}
 		}
+	}
+}
+
+func TargetConditionFunc(f func(r *http.Request) bool) Option {
+	return func(args *Options) {
+		args.TargetConditionFuncs = append(args.TargetConditionFuncs, f)
 	}
 }
 
@@ -119,9 +128,17 @@ func (l *BaseLimiter) Name() string {
 }
 
 func (l *BaseLimiter) IsTargetRequest(r *http.Request) bool {
-	return l.isTargetExtensions(r) && l.isTargetMethod(r) && l.isTargetPath(r)
+	return l.isTargetExtensions(r) && l.isTargetMethod(r) && l.isTargetPath(r) && l.isTargetCondition(r)
 }
 
+func (l *BaseLimiter) isTargetCondition(r *http.Request) bool {
+	for _, f := range l.targetConditionFuncs {
+		if !f(r) {
+			return false
+		}
+	}
+	return true
+}
 func (l *BaseLimiter) isTargetExtensions(r *http.Request) bool {
 	if len(l.targetExtensions) == 0 {
 		return true

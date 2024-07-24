@@ -1,6 +1,10 @@
 # Changelog
 
 
+## [v0.0.9](https://github.com/2manymws/rlutils/compare/v0.0.8...v0.0.9) - 2024-07-24
+### Other Changes
+- If a function can be passed, everything can be fulfilled by @pyama86 in https://github.com/2manymws/rlutils/pull/13
+
 ## [v0.0.8](https://github.com/2manymws/rlutils/compare/v0.0.7...v0.0.8) - 2024-06-10
 ### Other Changes
 - I made it possible to specify target methods. by @pyama86 in https://github.com/2manymws/rlutils/pull/11

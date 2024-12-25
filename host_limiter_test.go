@@ -14,11 +14,24 @@ func TestHostLimiter(t *testing.T) {
 	cases := []struct {
 		name                string
 		host                string
+		reqLimitPerHost     map[string]int
+		expectedReqLimit    int
 		expectedToBeLimited bool
 	}{
 		{
 			name:                "Host is limited",
 			host:                "api.example.com",
+			reqLimitPerHost:     map[string]int{},
+			expectedReqLimit:    5,
+			expectedToBeLimited: true,
+		},
+		{
+			name: "when host is more limited",
+			host: "api.example.com",
+			reqLimitPerHost: map[string]int{
+				"api.example.com": 1,
+			},
+			expectedReqLimit:    1,
 			expectedToBeLimited: true,
 		},
 	}
@@ -38,6 +51,7 @@ func TestHostLimiter(t *testing.T) {
 				nil,
 				nil,
 			)
+			limiter.ReqLimitPerHost = tc.reqLimitPerHost
 
 			// Using the mock counter instead of the real one.
 			limiter.Counter = mockCounter
@@ -49,7 +63,7 @@ func TestHostLimiter(t *testing.T) {
 			if tc.expectedToBeLimited {
 				assert.NotNil(t, rule)
 				assert.Equal(t, tc.host, rule.Key)
-				assert.Equal(t, reqLimit, rule.ReqLimit)
+				assert.Equal(t, tc.expectedReqLimit, rule.ReqLimit)
 				assert.Equal(t, windowLen, rule.WindowLen)
 			} else {
 				assert.Nil(t, rule)

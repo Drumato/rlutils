@@ -9,6 +9,8 @@ import (
 
 type HostLimiter struct {
 	BaseLimiter
+	// ReqLimitPerHost はホストごとに特別なしきい値を設定できるようにします
+	ReqLimitPerHost map[string]int
 }
 
 // ホストごとにリクエスト数を制限する
@@ -26,6 +28,7 @@ func NewHostLimiter(
 			onRequestLimit,
 			setter...,
 		),
+		ReqLimitPerHost: make(map[string]int),
 	}
 }
 
@@ -37,9 +40,14 @@ func (l *HostLimiter) Rule(r *http.Request) (*rl.Rule, error) {
 	if !l.IsTargetRequest(r) {
 		return &rl.Rule{ReqLimit: -1}, nil
 	}
+
+	reqLimit := l.reqLimit
+	if v, ok := l.ReqLimitPerHost[r.Host]; ok {
+		reqLimit = v
+	}
 	return &rl.Rule{
 		Key:       r.Host,
-		ReqLimit:  l.reqLimit,
+		ReqLimit:  reqLimit,
 		WindowLen: l.windowLen,
 	}, nil
 }
